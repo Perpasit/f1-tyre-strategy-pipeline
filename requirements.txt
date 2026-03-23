@@ -1,3 +1,2 @@
 fastf1
 pandas
-python-dotenv
