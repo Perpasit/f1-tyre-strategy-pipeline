@@ -1,22 +1,21 @@
 # F1 Tyre Strategy Pipeline
 
 ## Overview
-This project builds an end-to-end data pipeline using Snowflake to analyze Formula 1 tyre strategy and race performance.  
-It transforms raw lap-level telemetry data into analytics-ready datasets to support pre-race strategic decision-making.
+This project builds an end-to-end data pipeline to analyze Formula 1 tyre strategy and driver performance using Snowflake and dbt.
 
-The pipeline is designed with a Medallion Architecture (Bronze, Silver, Gold) and supports multi-race and multi-season analysis.
+The pipeline extracts lap-level telemetry data from FastF1, processes it through a Medallion Architecture (Bronze, Silver, Gold), and generates analytics-ready datasets to support race strategy insights.
 
 ---
 
 ## Problem Statement
-Formula 1 teams must make critical race strategy decisions such as tyre selection and pit stop timing under uncertainty.
+Formula 1 teams must make critical decisions such as tyre selection and pit stop timing under uncertainty.
 
-Raw race data alone is not sufficient for decision-making. It must be cleaned, transformed, and aggregated into meaningful metrics.
+Raw lap data alone is not sufficient. It must be transformed into meaningful metrics such as:
+- Tyre degradation
+- Driver consistency
+- Stint performance
 
-This project simulates the role of a race strategy analytics team by building a data pipeline that:
-- Collects race data
-- Transforms it into structured layers
-- Generates insights to support strategic planning
+This project simulates a race strategy analytics pipeline that converts raw data into actionable insights.
 
 ---
 
@@ -25,135 +24,130 @@ This project simulates the role of a race strategy analytics team by building a 
 
 ---
 
-## Data Source
-- FastF1 (Python library)
-  - Lap times
-  - Tyre compounds
-  - Stints
-  - Driver and session data
+## Pipeline Flow
+
+FastF1 (Python Extraction)  
+→ Raw CSV  
+→ Snowflake Bronze  
+→ dbt (Silver → Gold)  
+→ Data Tests  
+→ Analytics Output  
 
 ---
 
-## Data Pipeline (Medallion Architecture)
+## Data Layers
 
-### Bronze Layer (Raw)
-- Stores raw data extracted from FastF1
-- Includes metadata:
-  - race year
-  - grand prix
-  - session type
-- Minimal transformation
+### Bronze
+- Raw data from FastF1
+- Table: F1_ANALYTICS.BRONZE.F1_LAPS_RAW
 
-### Silver Layer (Cleaned & Structured)
-- Cleans and standardizes data
-- Removes invalid or null values
-- Ensures correct data types
-- Prepares data for aggregation
+### Silver
+- Cleaned & structured data
+- Tables:
+  - SILVER_F1_LAPS_CLEAN
+  - SILVER_F1_LAPS_FEATURES
 
-### Gold Layer (Analytics)
-- Aggregated and feature-engineered tables:
-  - f1_tyre_strategy
-  - f1_driver_performance
-  - f1_race_summary
-- Optimized for analysis and decision-making
-
----
-
-## Pipeline Capabilities
-
-### Parameterized Data Extraction
-Supports dynamic extraction by:
-- year
-- grand prix
-- session type
-
-Example:
-python src/extract/fastf1_extractor.py --year 2023 --gp Monaco --session R
-
-### Multi-Race Processing
-Batch extraction supported:
-
-python src/pipeline/batch_extract.py
-
-### Data Validation Checks
-Validation is applied at multiple layers:
-
-Bronze:
-- Null checks
-- Duplicate detection
-- Invalid values
-
-Silver:
-- Data type validation
-- Value range checks
-
-Gold:
-- Aggregation consistency checks
-
----
-
-## Key Outputs
-
-### 1. Tyre Strategy Analysis
-- Stint length per compound
-- Average lap time per compound
-- Performance degradation
-
-### 2. Driver Performance
-- Average lap time
-- Best and worst lap
-- Consistency (standard deviation)
-
-### 3. Race Summary
-- Performance comparison across tyre compounds
-
----
-
-## Example Insights
-- Soft tyres degrade faster after several laps  
-- Medium tyres provide more consistent performance  
-- Certain drivers maintain stable pace across longer stints  
-
----
-
-## Project Structure
-
-f1-tyre-strategy-pipeline/
-├─ docs/
-├─ data/
-├─ src/
-├─ sql/
-└─ README.md
+### Gold
+- Analytics-ready tables
+- Tables:
+  - GOLD_F1_TYRE_STRATEGY
+  - GOLD_F1_DRIVER_PERFORMANCE
+  - GOLD_F1_RACE_SUMMARY
 
 ---
 
 ## How to Run
 
-1. Install dependencies
-pip install -r requirements.txt
+1. Install dependencies  
+pip install -r requirements.txt  
 
-2. Extract data
-python src/extract/fastf1_extractor.py --year 2023 --gp Monaco --session R
+2. Setup environment (.env)  
+SNOWFLAKE_USER=...  
+SNOWFLAKE_PASSWORD=...  
+SNOWFLAKE_ACCOUNT=...  
 
-3. Load data into Snowflake
+3. Run pipeline  
+python -m pipeline.run_pipeline --year 2023 --gp Monaco --session R  
 
-4. Run SQL pipeline
+---
 
-5. Run validation
+## Sample Results
 
-6. Run analysis queries
+Example outputs are stored in:
+```
+results/
+```
+
+### Tyre Strategy (Sample)
+
+| RaceYear | GrandPrix | Compound | Stint | Avg Lap Time |
+|----------|----------|----------|-------|--------------|
+| 2023 | Monaco | HARD | 1 | 72.18 |
+| 2023 | Monaco | MEDIUM | 2 | 72.55 |
+| 2023 | Monaco | SOFT | 1 | 73.02 |
+
+---
+
+### Driver Performance (Sample)
+
+| RaceYear | GrandPrix | Driver | Avg Lap Time | Std Dev |
+|----------|----------|--------|--------------|--------|
+| 2023 | Monaco | STR | 72.30 | 0.45 |
+| 2023 | Monaco | HAM | 72.60 | 0.52 |
+| 2023 | Monaco | VER | 72.10 | 0.48 |
+
+---
+
+### Race Summary (Sample)
+
+| RaceYear | GrandPrix | Compound | Avg Lap Time |
+|----------|----------|----------|--------------|
+| 2023 | Monaco | HARD | 72.18 |
+| 2023 | Monaco | MEDIUM | 72.55 |
+| 2023 | Monaco | SOFT | 73.02 |
+
+---
+
+## How to Use Gold Data
+
+### 1. Dashboard (Streamlit)
+Build interactive dashboards to visualize:
+- Lap time trends
+- Tyre performance
+- Driver comparison
+
+### 2. Tyre Degradation Curve
+Model how lap time increases over stint length to estimate degradation.
+
+### 3. Pit Stop Recommendation
+Use stint + degradation to estimate optimal pit stop timing.
+
+---
+
+## Sample Uses
+
+Example implementations are stored in:
+```
+sample-uses/
+```
+
+Possible extensions:
+- Streamlit dashboard app
+- Tyre degradation modeling
+- Strategy recommendation engine
 
 ---
 
 ## Tech Stack
 - Python (FastF1, Pandas)
-- Snowflake (Data Warehouse)
+- Snowflake
+- dbt
 - SQL
-- GitHub
 
 ---
 
 ## Future Improvements
-- CI/CD with GitHub Actions
 - Incremental pipeline
-- Dashboard (Streamlit/Tableau)
+- Multi-race support
+- Real-time ingestion
+- Advanced ML models
