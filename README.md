@@ -156,4 +156,4 @@ python src/extract/fastf1_extractor.py --year 2023 --gp Monaco --session R
 ## Future Improvements
 - CI/CD with GitHub Actions
 - Incremental pipeline
-- Weather data integration
+- Dashboard (Streamlit/Tableau)
