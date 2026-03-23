@@ -1,25 +1,61 @@
+import argparse
+import os
 import fastf1
 import pandas as pd
-from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parents[2]
+fastf1.Cache.enable_cache("cache")
 
-CACHE_DIR = BASE_DIR / "cache"
-RAW_DIR = BASE_DIR / "data" / "raw"
-OUTPUT_FILE = RAW_DIR / "laps.csv"
 
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
-RAW_DIR.mkdir(parents=True, exist_ok=True)
+def extract_session(year: int, gp: str, session_type: str = "R") -> pd.DataFrame:
+    session = fastf1.get_session(year, gp, session_type)
+    session.load()
 
-fastf1.Cache.enable_cache(str(CACHE_DIR))
+    laps = session.laps[["Driver", "LapNumber", "LapTime", "Compound", "Stint"]].copy()
+    laps["LapTime"] = laps["LapTime"].dt.total_seconds()
 
-session = fastf1.get_session(2023, "Monaco", "R")
-session.load()
+    laps["RaceYear"] = year
+    laps["GrandPrix"] = gp
+    laps["SessionType"] = session_type
 
-laps = session.laps[["Driver", "LapNumber", "LapTime", "Compound", "Stint"]].copy()
+    laps = laps[
+        [
+            "RaceYear",
+            "GrandPrix",
+            "SessionType",
+            "Driver",
+            "LapNumber",
+            "LapTime",
+            "Compound",
+            "Stint",
+        ]
+    ]
 
-laps.loc[:, "LapTime"] = laps["LapTime"].dt.total_seconds()
+    return laps
 
-laps.to_csv(OUTPUT_FILE, index=False)
 
-print(f"Data saved to {OUTPUT_FILE}")
+def save_to_csv(df: pd.DataFrame, output_path: str) -> None:
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    df.to_csv(output_path, index=False)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Extract F1 session lap data from FastF1")
+    parser.add_argument("--year", type=int, required=True, help="Race year, e.g. 2023")
+    parser.add_argument("--gp", type=str, required=True, help="Grand Prix name, e.g. Monaco")
+    parser.add_argument("--session", type=str, default="R", help="Session type, default R")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="data/raw/laps.csv",
+        help="Output CSV path",
+    )
+    args = parser.parse_args()
+
+    df = extract_session(args.year, args.gp, args.session)
+    save_to_csv(df, args.output)
+
+    print(f"Saved {len(df)} rows to {args.output}")
+
+
+if __name__ == "__main__":
+    main()
