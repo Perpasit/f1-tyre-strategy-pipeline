@@ -33,6 +33,13 @@ raw data into actionable insights.
 
 ## Pipeline Flow
 
+The pipeline is executed through a single command:
+
+```bash
+python -m pipeline.run_pipeline --year 2023 --gp Monaco --session R 
+```
+
+Execution flow:
 FastF1 (Python Extraction)\
 → Raw CSV\
 → Snowflake Bronze\
