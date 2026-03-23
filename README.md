@@ -68,6 +68,20 @@ Features:
 
 ------------------------------------------------------------------------
 
+## Data Source
+
+This project uses data from:
+
+- [FastF1](https://github.com/theOehrly/Fast-F1) — a Python library for accessing Formula 1 telemetry and timing data
+
+------------------------------------------------------------------------
+
+## Disclaimer
+
+This project is for educational purposes and is not affiliated with Formula 1 or any official teams.
+
+------------------------------------------------------------------------
+
 ## Future Improvements
 
 -   Incremental pipeline
