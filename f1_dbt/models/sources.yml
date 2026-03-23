@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: F1_ANALYTICS
+    schema: BRONZE
+    tables:
+      - name: f1_laps_raw
